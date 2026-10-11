@@ -19,7 +19,7 @@ initRonna({ usageAction: "lookups" }).then(user => {
 // ─── Build tool UI ────────────────────────────────────────────────────────────
 // ─── Find ─────────────────────────────────────────────────────────────────────
 document.getElementById("btn-find").addEventListener("click", () => {
-  const company = document.getElementById("company-input").value.trim();
+  const company = document.getElementById("filter-company").value.trim();
   if (!company) return toast.warning("Please enter a company name or domain.");
   gate("lookups", () => runFind(company), () => {});
 });
@@ -30,12 +30,13 @@ async function runFind(company) {
   document.getElementById("btn-find").disabled = true;
 
   try {
-    const res = await apiFetch("/api/contacts/find", {
+    const data = await apiFetch("/api/contacts/find", {
         company,
-        titleFilter: document.getElementById("title-filter")
+        titleFilter: document.getElementById("filter-title")?.value,
+        department: document.getElementById("filter-dept")?.value,
+        seniority: document.getElementById("filter-seniority")?.value
     });
-    const data = await res.json();
-    results = data.contacts || null;
+    results = data?.contacts || null;
   } catch {
     results = null;
   }
@@ -47,9 +48,10 @@ async function runFind(company) {
 }
 
 function renderResults(contacts) {
-  document.getElementById("result-count").textContent = contacts.length;
-  document.getElementById("results-tbody").innerHTML = contacts.map(c => `
+  document.getElementById("results-count").textContent = contacts.length;
+  document.getElementById("contacts-tbody").innerHTML = contacts.map(c => `
     <tr>
+      <td><input type="checkbox" class="row-check" /></td>
       <td><strong>${c.name}</strong></td>
       <td>${c.title}</td>
       <td>${c.company}</td>
@@ -58,8 +60,8 @@ function renderResults(contacts) {
       <td>${c.linkedin ? `<a href="${c.linkedin}" target="_blank">View</a>` : "—"}</td>
       <td><span class="tag ${c.confidence >= 80 ? "tag-green" : c.confidence >= 60 ? "tag-orange" : "tag-gray"}">${c.confidence}%</span></td>
     </tr>`).join("");
-  document.getElementById("results-section").classList.remove("hidden");
-  document.getElementById("results-section").scrollIntoView({ behavior: "smooth" });
+  document.getElementById("results-panel").classList.remove("hidden");
+  document.getElementById("results-panel").scrollIntoView({ behavior: "smooth" });
 }
 
 document.getElementById("btn-export-csv")?.addEventListener("click", () => {
@@ -69,14 +71,14 @@ document.getElementById("btn-export-csv")?.addEventListener("click", () => {
 
 document.getElementById("btn-save")?.addEventListener("click", async () => {
   if (!results.length) return;
-  await saveToFirestore("saved-contacts", { contacts: results, company: document.getElementById("company-input").value });
+  await saveToFirestore("saved-contacts", { contacts: results, company: document.getElementById("filter-company").value });
   loadHistory(); toast.success("Saved!");
 });
 
 async function loadHistory() {
-  const items = await getFromFirestore("saved-contacts");
   const grid = document.getElementById("history-grid");
-  if (!grid) return;
+  if (!grid) return; // no history UI on this page
+  const items = await getFromFirestore("saved-contacts");
   document.getElementById("history-section").classList.remove("hidden");
   grid.innerHTML = items.length
     ? items.map(i => `<div class="result-card"><div class="result-count">${i.contacts?.length || 0}</div><strong>${i.company || "Search"}</strong><small>${i.createdAt?.toDate?.().toLocaleDateString?.() || "Recently"}</small></div>`).join("")
@@ -85,10 +87,12 @@ async function loadHistory() {
 
 // RONNA-MOCK-FALLBACK: never fabricate results when the scanner API is unavailable.
 function showUnavailable() {
-  const panel = document.getElementById("results-panel") || document.getElementById("results-section");
-  if (panel) {
-    panel.classList.remove("hidden");
-    panel.innerHTML = '<div class="empty-state" role="status"><p><strong>The scanner service is unavailable right now.</strong></p><p>No results were generated. Please try again later.</p></div>';
-  }
+  // Keep the results table in the DOM so a later successful search can render into it.
+  results = [];
+  document.getElementById("results-panel")?.classList.remove("hidden");
+  const count = document.getElementById("results-count");
+  if (count) count.textContent = "";
+  const tbody = document.getElementById("contacts-tbody");
+  if (tbody) tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state" role="status"><p><strong>The scanner service is unavailable right now.</strong></p><p>No results were generated. Please try again later.</p></div></td></tr>';
   toast.error("Scanner service unavailable. No results were generated.");
 }
