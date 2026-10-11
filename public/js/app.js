@@ -35,12 +35,12 @@ async function runFind(company) {
         titleFilter: document.getElementById("title-filter")
     });
     const data = await res.json();
-    results = data.contacts || mockContacts(company);
+    results = data.contacts || null;
   } catch {
-    results = mockContacts(company);
+    results = null;
   }
 
-  renderResults(results);
+  if (results) renderResults(results); else showUnavailable();
   document.querySelector(".btn-text").classList.remove("hidden");
   document.querySelector(".btn-loader").classList.add("hidden");
   document.getElementById("btn-find").disabled = false;
@@ -83,13 +83,12 @@ async function loadHistory() {
     : "<p class='empty-state'>No saved searches yet.</p>";
 }
 
-function mockContacts(company) {
-  const names = [["Sarah Chen","VP Marketing"],["James Rodriguez","CEO"],["Emily Park","Head of Sales"],["David Kim","CTO"],["Ashley Morgan","Director of Operations"]];
-  return names.map(([name, title]) => ({
-    name, title, company,
-    email: `${name.split(" ")[0].toLowerCase()}@${company.toLowerCase().replace(/ /g,"")}.com`,
-    phone: `+1 (${Math.floor(Math.random()*900)+100}) ${Math.floor(Math.random()*900)+100}-${Math.floor(Math.random()*9000)+1000}`,
-    linkedin: `https://linkedin.com/in/${name.toLowerCase().replace(/ /g,"-")}`,
-    confidence: Math.floor(Math.random()*25)+70
-  }));
+// RONNA-MOCK-FALLBACK: never fabricate results when the scanner API is unavailable.
+function showUnavailable() {
+  const panel = document.getElementById("results-panel") || document.getElementById("results-section");
+  if (panel) {
+    panel.classList.remove("hidden");
+    panel.innerHTML = '<div class="empty-state" role="status"><p><strong>The scanner service is unavailable right now.</strong></p><p>No results were generated. Please try again later.</p></div>';
+  }
+  toast.error("Scanner service unavailable. No results were generated.");
 }
