@@ -11,11 +11,11 @@
   <!-- SEO & Social -->
   <meta name="description" content="Find verified contact information for any business lead — name, title, email, phone, and LinkedIn profile." />
   <meta name="robots" content="index, follow" />
-  <link rel="canonical" href="https://ronnascanner.com/contacts" />
+  <link rel="canonical" href="https://contacts.ronnascanner.com/" />
 
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://ronnascanner.com/contacts" />
+  <meta property="og:url" content="https://contacts.ronnascanner.com/" />
   <meta property="og:title" content="RonnaScanner — Contact Finder" />
   <meta property="og:description" content="Find verified contact information for any business lead — name, title, email, phone, and LinkedIn profile." />
   <meta property="og:image" content="https://contacts.ronnascanner.com/og-card.png" />
@@ -91,15 +91,15 @@
         <div class="panel-header"><span class="panel-num">01</span><h2>Find Contacts</h2></div>
         <div class="filter-grid">
           <div>
-            <label class="field-label">Company Name or Domain</label>
+            <label class="field-label" for="filter-company">Company Name or Domain</label>
             <input type="text" class="input" id="filter-company" placeholder="e.g. acme.com or Acme Corp" />
           </div>
           <div>
-            <label class="field-label">Job Title / Role</label>
+            <label class="field-label" for="filter-title">Job Title / Role</label>
             <input type="text" class="input" id="filter-title" placeholder="e.g. CEO, VP Sales, Marketing Director" />
           </div>
           <div>
-            <label class="field-label">Department</label>
+            <label class="field-label" for="filter-dept">Department</label>
             <select class="input" id="filter-dept">
               <option value="">Any Department</option>
               <option value="executive">Executive / C-Suite</option>
@@ -112,7 +112,7 @@
             </select>
           </div>
           <div>
-            <label class="field-label">Seniority</label>
+            <label class="field-label" for="filter-seniority">Seniority</label>
             <select class="input" id="filter-seniority">
               <option value="">Any Level</option>
               <option value="c_suite">C-Suite</option>
@@ -142,7 +142,7 @@
           <table class="results-table">
             <thead>
               <tr>
-                <th><input type="checkbox" id="select-all" /></th>
+                <th><input type="checkbox" id="select-all" aria-label="Select all rows" /></th>
                 <th>Name</th><th>Title</th><th>Company</th>
                 <th>Email</th><th>Phone</th><th>LinkedIn</th><th>Verified</th>
               </tr>
