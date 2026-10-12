@@ -4,7 +4,7 @@ import { saveDoc, getUserDocs, tsToString } from "./services/firestoreService.js
 import { apiFetch } from "./config/env.js";
 import { toast } from "./utils/toast.js";
 import { gate } from "./services/paywallUI.js";
-import { downloadText, setLoading, formatNumber } from "./utils/helpers.js";
+import { downloadText, setLoading, formatNumber, escapeHtml, safeUrl } from "./utils/helpers.js";
 
 
 let results = [];
@@ -53,13 +53,13 @@ function renderResults(contacts) {
   document.getElementById("contacts-tbody").innerHTML = contacts.map(c => `
     <tr>
       <td><input type="checkbox" class="row-check" /></td>
-      <td><strong>${c.name}</strong></td>
-      <td>${c.title}</td>
-      <td>${c.company}</td>
-      <td>${c.email ? `<a href="mailto:${c.email}">${c.email}</a>` : "—"}</td>
-      <td>${c.phone || "—"}</td>
-      <td>${c.linkedin ? `<a href="${c.linkedin}" target="_blank">View</a>` : "—"}</td>
-      <td><span class="tag ${c.confidence >= 80 ? "tag-green" : c.confidence >= 60 ? "tag-orange" : "tag-gray"}">${c.confidence}%</span></td>
+      <td><strong>${escapeHtml(c.name)}</strong></td>
+      <td>${escapeHtml(c.title)}</td>
+      <td>${escapeHtml(c.company)}</td>
+      <td>${c.email ? `<a href="${escapeHtml(safeUrl("mailto:" + c.email))}">${escapeHtml(c.email)}</a>` : "—"}</td>
+      <td>${escapeHtml(c.phone || "—")}</td>
+      <td>${safeUrl(c.linkedin, { assumeHttps: true }) ? `<a href="${escapeHtml(safeUrl(c.linkedin, { assumeHttps: true }))}" target="_blank" rel="noopener noreferrer">View</a>` : "—"}</td>
+      <td><span class="tag ${c.confidence >= 80 ? "tag-green" : c.confidence >= 60 ? "tag-orange" : "tag-gray"}">${escapeHtml(c.confidence)}%</span></td>
     </tr>`).join("");
   document.getElementById("results-panel").classList.remove("hidden");
   document.getElementById("results-panel").scrollIntoView({ behavior: "smooth" });
@@ -82,7 +82,7 @@ async function loadHistory() {
   const items = await getFromFirestore("saved-contacts");
   document.getElementById("history-section").classList.remove("hidden");
   grid.innerHTML = items.length
-    ? items.map(i => `<div class="result-card"><div class="result-count">${i.contacts?.length || 0}</div><strong>${i.company || "Search"}</strong><small>${i.createdAt?.toDate?.().toLocaleDateString?.() || "Recently"}</small></div>`).join("")
+    ? items.map(i => `<div class="result-card"><div class="result-count">${escapeHtml(i.contacts?.length || 0)}</div><strong>${escapeHtml(i.company || "Search")}</strong><small>${escapeHtml(i.createdAt?.toDate?.().toLocaleDateString?.() || "Recently")}</small></div>`).join("")
     : "<p class='empty-state'>No saved searches yet.</p>";
 }
 
