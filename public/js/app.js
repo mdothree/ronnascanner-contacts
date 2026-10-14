@@ -3,7 +3,7 @@ import { authService } from "./services/authService.js";
 import { saveDoc, getUserDocs, tsToString } from "./services/firestoreService.js";
 import { apiFetch } from "./config/env.js";
 import { toast } from "./utils/toast.js";
-import { gate } from "./services/paywallUI.js";
+import { gate, handleApiError } from "./services/paywallUI.js";
 import { downloadText, setLoading, formatNumber, escapeHtml, safeUrl } from "./utils/helpers.js";
 
 
@@ -30,6 +30,7 @@ async function runFind(company) {
   document.querySelector(".btn-loader").classList.remove("hidden");
   document.getElementById("btn-find").disabled = true;
 
+  let failure = null;
   try {
     const data = await apiFetch("/api/contacts/find", {
         company,
@@ -38,11 +39,12 @@ async function runFind(company) {
         seniority: document.getElementById("filter-seniority")?.value
     });
     results = data?.contacts || null;
-  } catch {
+  } catch (err) {
     results = null;
+    failure = handleApiError(err, "lookup");
   }
 
-  if (results) renderResults(results); else showUnavailable();
+  if (results) renderResults(results); else showUnavailable(failure);
   document.querySelector(".btn-text").classList.remove("hidden");
   document.querySelector(".btn-loader").classList.add("hidden");
   document.getElementById("btn-find").disabled = false;
@@ -87,15 +89,18 @@ async function loadHistory() {
 }
 
 // RONNA-MOCK-FALLBACK: never fabricate results when the scanner API is unavailable.
-function showUnavailable() {
+// `failure` is handleApiError's { status, title, detail } (402 paywall, 501 not open, ...).
+function showUnavailable(failure) {
+  const title = failure?.title || "The scanner service is unavailable right now.";
+  const detail = failure?.detail || "No results were generated. Please try again later.";
   // Keep the results table in the DOM so a later successful search can render into it.
   results = [];
   document.getElementById("results-panel")?.classList.remove("hidden");
   const count = document.getElementById("results-count");
   if (count) count.textContent = "";
   const tbody = document.getElementById("contacts-tbody");
-  if (tbody) tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state" role="status"><p><strong>The scanner service is unavailable right now.</strong></p><p>No results were generated. Please try again later.</p></div></td></tr>';
-  toast.error("Scanner service unavailable. No results were generated.");
+  if (tbody) tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state" role="status"><p><strong>${escapeHtml(title)}</strong></p><p>${escapeHtml(detail)}</p></div></td></tr>`;
+  toast.error(detail);
 }
 
 // RONNA-LOADLIST-AWAIT-BUG (same class on this sub): saveToFirestore / getFromFirestore
